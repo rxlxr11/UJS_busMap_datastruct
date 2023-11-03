@@ -1,0 +1,16 @@
+E:/codeTest/datastruct/data/point/1.txt
+E:/codeTest/datastruct/data/point/2.txt
+E:/codeTest/datastruct/data/point/3.txt
+E:/codeTest/datastruct/data/point/4.txt
+E:/codeTest/datastruct/data/point/5.txt
+E:/codeTest/datastruct/data/point/6.txt
+E:/codeTest/datastruct/data/point/7.txt
+E:/codeTest/datastruct/data/point/8.txt
+E:/codeTest/datastruct/data/point/9.txt
+E:/codeTest/datastruct/data/point/10.txt
+E:/codeTest/datastruct/data/point/11.txt
+E:/codeTest/datastruct/data/point/12.txt
+E:/codeTest/datastruct/data/point/13.txt
+E:/codeTest/datastruct/data/point/14.txt
+E:/codeTest/datastruct/data/point/15.txt
+E:/codeTest/datastruct/data/point/16.txt
