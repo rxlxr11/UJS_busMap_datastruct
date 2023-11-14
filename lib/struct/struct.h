@@ -24,6 +24,15 @@
 	}Point;
 
 	//路线规划
+    typedef struct head{
+        int node;
+        float distance;
+        float time;
+        float price;
+        int change;
+        struct way *next;
+    }headN;
+
 	typedef struct way{
 		int id;
 		char name[20];
@@ -40,8 +49,8 @@
 
 	LinkList* createLink(char *);
 	
-	void insert_wayNode(wayNode *,int,char *,char *);
-	void copy_way(wayNode*,wayNode*);
+	void insert_wayNode(headN *,int,char *,char *,float );
+	void copy_way(headN *,headN *);
 	wayNode* createWay(void);
 	Neighbour* find_Neighbour(int , Point);
 
