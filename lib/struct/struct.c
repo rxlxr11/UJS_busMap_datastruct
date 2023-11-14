@@ -44,10 +44,10 @@ void insert_wayNode(headN *n,int id,char *name,char *route,float distance){
         t->next=x;
     } else{
         n->next = x;
-        n->node++;
-        n->distance+=distance;
-    }
 
+    }
+				n->node++;
+    n->distance+=distance;
 
 
 }
