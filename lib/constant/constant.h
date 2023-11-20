@@ -5,8 +5,8 @@
 #define MAX 99999999
 #define MAXSIZE 25
 
-#define HUMANV 1
-#define BUSV 10
+#define HUMANV 100
+#define BUSV 500
 
 #define FILENAME         "E:/codeTest/datastruct"
 #define BUSFOLDEER       "E:/codeTest/datastruct/data/bus/"
@@ -25,7 +25,7 @@ extern LinkList* busRoute[MAXSIZE];
 
 //纪录公交线路名称
 extern char busName[MAXSIZE][20];
-//记录对应公交价格
+//记录对应公交价格busPrice
 extern float busPrice[MAXSIZE];
 //记录所有站点名称
 extern char allPointName[MAXSIZE][20];
