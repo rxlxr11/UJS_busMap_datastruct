@@ -9,25 +9,7 @@ int equal_f(char *s1,char *s2){
 	}
 	return 0;
 }
-//输入字符串，返回在字符串数组中的位置
-int locate(char *s,char **ss){
-	int a, i = 0;
-	int flag = 0;
-	while(ss[i] != NULL){
-		a=strcmp(s,ss[i]);
-		if(a==0){
-			//TODO
-			flag=1;
-			break;
-		}
-		i++;
-	}
-	if(flag==0){
-		//TODO
-		i=-1;
-	}
-	return i;
-}
+
 
 int locate_int(int m,int a[25],int num){
 	int flag=-1;
@@ -81,21 +63,3 @@ int findSame(int a[10],int b[10],int c[10],int a_num,int b_num){
 	return n;
 }
 
-void selectionSort(int *arr,int arrLength) {
-	int *p=arr;
-	int temp, min = 0;
-	for (int i = 0; i < arrLength - 1; i++) {
-		min = i;
-		// 循环查找最小值
-		for (int j = i + 1; j < arrLength; j++) {
-			if (*(p+min) > *(p+j)) {
-				min = j;
-			}
-		}
-		if (min != i) {
-			temp = *(arr+i);
-			*(arr+i) = *(arr+min);
-			*(arr+min) = temp;
-		}
-	}
-}
