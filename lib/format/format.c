@@ -68,18 +68,3 @@ void printBus(LinkList* L){
     printf("+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－+\n");
 	
 }
-void printWay(wayNode *n){
-    printf("+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－+\n");
-	printf(" %s", n->name);
-	while(n != NULL){
-		//TODO
-		n=n->next;
-		if(n != NULL){
-			//TODO
-			printf("--%s-->",n->route);
-			printf("%s",n->name);
-		}
-	}
-	printf("\n");
-    printf("+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－+\n");
-}
