@@ -1,10 +1,151 @@
 #include "cilent.h"
 
-float method_f(Neighbour *n){
-    int flag = equal_f(n->route,"z");
-    if(flag == 0)
-        return n->distance/HUMANV;
-    return n->distance/BUSV;
+//输入字符串，返回在字符串数组中的位置
+int locate(char *s){
+    int a, i = 0;
+    while(busName[i] != NULL && i < bus_Num){
+        a=strcmp(s,busName[i]);
+        if(a==0){
+            return i;
+        }
+        i++;
+    }
+    return -1;
+}
+
+void selectionSort(float *num, int arrLength,int *index) {
+    float *x = num;
+    float temp_num  = 0;
+    int min = 0;
+    int temp_index = 0;
+    for (int i = 0; i < arrLength - 1; i++) {
+        min = i;
+        // 循环查找最小值
+        for (int j = i + 1; j < arrLength; j++) {
+            if (*(x+min) > *(x+j)) {
+                min = j;
+            }
+        }
+        if (min != i) {
+            temp_num = *(num+i);
+            *(num+i) = *(num+min);
+            *(num+min) = temp_num;
+
+            temp_index = *(index+i);
+            *(index+i) = *(index+min);
+            *(index+min) = temp_index;
+        }
+    }
+}
+
+
+float time_f(char* route,float dist){
+    int flag = equal_f(route,"z");
+    if(flag == 1)
+        return dist/HUMANV;
+    return dist/BUSV;
+}
+
+int change_f(char* route1,char* route2){
+    int flag = equal_f(route1,route2);
+    int flag2 = equal_f(route2,"z");
+    if(flag != 1 && flag2 != 1){
+        return 1;
+    }
+    return 0;
+}
+
+float price_f(char *route){
+    float price = 0;
+    int index = locate(route);
+    if (index != -1)
+        price = busPrice[index];
+    return price;
+}
+
+void copyHead(headN* source, headN* dest){
+    dest->start = source->start;
+    strcpy(dest->name,source->name);
+    dest->node = source->node;
+    dest->distance = source->distance;
+    dest->time = source->time;
+    dest->price = source->price;
+    dest->change = source->change;
+}
+//尾插法
+void insert_wayNode(headN *n,int id,char *name,char *route,float distance){
+    wayNode *x=(wayNode*)malloc(sizeof(wayNode));
+    x->id=id;
+    strcpy(x->name,name);
+    strcpy(x->route,route);
+    x->next=NULL;
+    if(n->next!=NULL)
+    {
+        wayNode *t=(wayNode*)malloc(sizeof(wayNode));
+        t = n->next;
+        while(t->next!=NULL){
+            t=t->next;
+        }
+        t->next = x;
+        //if change bus
+        if(change_f(t->route,route)){
+            n->change++;
+            n->price += price_f(route);
+        }
+    } else{
+        n->next = x;
+        if(equal_f(route,"z")!=1){
+            n->change++;
+            n->price += price_f(route);
+        }
+    }
+    n->time += time_f(route,distance);
+    n->node++;
+    n->distance+=distance;
+
+}
+
+void copy_way(headN *source,headN *wcopy){
+    wcopy->next=NULL;
+    wayNode *wc=(wayNode*)malloc(sizeof(wayNode));
+    wc=source->next;
+    while(wc!=NULL){
+        insert_wayNode(wcopy,wc->id,wc->name,wc->route,0);
+        wc=wc->next;
+    }
+    copyHead(source,wcopy);
+}
+
+headN* createWay(int start, char* start_name) {
+    headN *n;
+    n = (headN *)malloc(sizeof(headN ));
+    n->start = start;
+    strcpy(n->name , start_name);
+    n->next = NULL;
+    n->distance = 0;
+    n->change = 0;
+    n->price = 0;
+    n->time = 0;
+    n->node = 1;
+    return n;
+}
+
+void printWay(headN *h){
+    printf("+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－+\n");
+    printf(" distance: %.2f m\n "
+           "time:     %.2f min\n "
+           "price:    %.2f RMB\n "
+           "乘车次数:   %d\n",
+           h->distance,h->time,h->price,h->change);
+    printf(" %s", h->name);
+    wayNode* n = h->next;
+    while(n != NULL){
+        printf("--%s-->",n->route);
+        printf("%s",n->name);
+        n=n->next;
+    }
+    printf("\n");
+    printf("+－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－－+\n");
 }
 //查询经过该点的所有公交路线
 /*
@@ -59,13 +200,8 @@ void allBus(){
     }
 }
 //所有可达路线
-int allRoute(wayNode *allWay[10],int start,int end) {
-    //store all route
-    for (int i = 0; i < 10; i++) {
-        allWay[i] = createWay();
-    }
-    //cost time
-    float time[10];
+int allRoute(headN *allWay[10],int start,int end) {
+
     Neighbour *n;
     Point start_p1, p2, p, end_p;
     //routeCount:the number of route
@@ -88,11 +224,13 @@ int allRoute(wayNode *allWay[10],int start,int end) {
     char endN[20];
     strcpy(startN,start_p1.name);
     strcpy(endN,end_p.name);
-    for (i = 0; i < 10; i++) {
-        allWay[i]->next = NULL;
-        strcpy(allWay[i]->name, start_p1.name);
-        allWay[i]->id = start_p1.id;
+
+    //store all route
+    for (int i = 0; i < 10; i++) {
+        allWay[i] = createWay(start,startN);
     }
+
+
     i = 0;
     end_p = findPoint(end);
     n = start_p1.first;
@@ -108,8 +246,8 @@ int allRoute(wayNode *allWay[10],int start,int end) {
         if (start_1[i] == end) {
             //TODO
             Neighbour *n = find_Neighbour(end, start_p1);
-            time[routeCount] = method_f(n);
-            insert_wayNode(allWay[routeCount], n->id, endN, n->route);
+            //time[routeCount] = time_f(n->route,n->distance);
+            insert_wayNode(allWay[routeCount], n->id, endN, n->route,n->distance);
             //printWay(allWay[routeCount]);
             start_1[i] = -1;
             routeCount++;
@@ -133,11 +271,11 @@ int allRoute(wayNode *allWay[10],int start,int end) {
     for (i = 0; i < same_num; i++) {
         Point pt = findPoint(same[i]);
         Neighbour *nt = find_Neighbour(same[i], start_p1);
-        insert_wayNode(allWay[routeCount], same[i], pt.name, nt->route);
-        time[routeCount] = method_f(nt);
+        insert_wayNode(allWay[routeCount], same[i], pt.name, nt->route,nt->distance);
+        //time[routeCount] = time_f(nt->route,nt->distance);
         nt = find_Neighbour(end, pt);
-        insert_wayNode(allWay[routeCount], end, endN, nt->route);
-        time[routeCount] += method_f(nt);
+        insert_wayNode(allWay[routeCount], end, endN, nt->route,nt->distance);
+        //time[routeCount] += time_f(nt->route,nt->distance);
         //printWay(allWay[routeCount]);
         routeCount++;
         for (int j = 0; j < start1_num; j++) {
@@ -184,15 +322,16 @@ int allRoute(wayNode *allWay[10],int start,int end) {
 
             Point pt = findPoint(start_2[i][0]);
             Neighbour *nt = find_Neighbour(start_2[i][0], start_p1);
-            insert_wayNode(allWay[routeCount], start_2[i][0], pt.name, nt->route);
-            time[routeCount] = method_f(nt);
+            insert_wayNode(allWay[routeCount], start_2[i][0], pt.name, nt->route,nt->distance);
+            //time[routeCount] = time_f(nt->route,nt->distance);
             nt = find_Neighbour(same[j], pt);
             pt = findPoint(same[j]);
-            insert_wayNode(allWay[routeCount], same[j], pt.name, nt->route);
-            time[routeCount] += method_f(nt);
+            insert_wayNode(allWay[routeCount], same[j], pt.name, nt->route,nt->distance);
+            //time[routeCount] += time_f(nt->route,nt->distance);
             nt = find_Neighbour(end, pt);
-            insert_wayNode(allWay[routeCount], end, endN, nt->route);
-            time[routeCount] += method_f(nt);
+            insert_wayNode(allWay[routeCount], end, endN, nt->route,nt->distance);
+            routeCount++;
+            //time[routeCount] += time_f(nt->route,nt->distance);
             //printWay(allWay[routeCount++]);
             find[cnt++]=same[j];
         }
@@ -241,19 +380,20 @@ int allRoute(wayNode *allWay[10],int start,int end) {
             for (int k = 0; k < same_num; k++) {
                 Neighbour *nt = find_Neighbour(start_2[i][0], start_p1);
                 Point pt = findPoint(start_2[i][0]);
-                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route);
-                time[routeCount] = method_f(nt);
+                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route,nt->distance);
+//                time[routeCount] = time_f(nt->route,nt->distance);
                 nt = find_Neighbour(same[k], pt);
                 pt = findPoint(same[k]);
-                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route);
-                time[routeCount] += method_f(nt);
+                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route,nt->distance);
+//                time[routeCount] += time_f(nt->route,nt->distance);
                 nt = find_Neighbour(end_2[j][0], pt);
                 pt = findPoint(end_2[j][0]);
-                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route);
-                time[routeCount] += method_f(nt);
+                insert_wayNode(allWay[routeCount], nt->id, pt.name, nt->route,nt->distance);
+//                time[routeCount] += time_f(nt->route,nt->distance);
                 nt = find_Neighbour(end, pt);
-                insert_wayNode(allWay[routeCount], nt->id, endN, nt->route);
-                time[routeCount] += method_f(nt);
+                insert_wayNode(allWay[routeCount], nt->id, endN, nt->route,nt->distance);
+                routeCount++;
+//                time[routeCount] += time_f(nt->route,nt->distance);
                 //printWay(allWay[routeCount++]);
             }
         }
@@ -262,10 +402,9 @@ int allRoute(wayNode *allWay[10],int start,int end) {
 }
 
 //最短路线
-void shortRoute(Point start, wayNode *allWay[point_Num]) {
+void shortRoute(Point start, headN *allWay[point_Num]) {
     int i;
-    Neighbour
-    
+    Neighbour *n;
     n = start.first;
     int FindPoint[point_Num];
     float dist[point_Num];
@@ -273,14 +412,14 @@ void shortRoute(Point start, wayNode *allWay[point_Num]) {
         allWay[i] = (wayNode*)malloc(sizeof(wayNode));
         FindPoint[i] = 0;
         dist[i] = MAX;
-        allWay[i]->id = start.id;
+        allWay[i]->start = start.id;
         strcpy(allWay[i]->name, start.name);
         allWay[i]->next = NULL;
     }
     while (n != NULL) {
         dist[locate_int(n->id, allPointId, point_Num)] = n->distance;
         Point pName = findPoint(n->id);
-        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
+        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
         n = n->next;
     }
     FindPoint[locate_int(start.id, allPointId, point_Num)] = 1;
@@ -302,114 +441,147 @@ void shortRoute(Point start, wayNode *allWay[point_Num]) {
                 dist[locate_int(n->id, allPointId, point_Num)] = n->distance + dist[u];
                 copy_way(allWay[u], allWay[locate_int(n->id, allPointId, point_Num)]);
                 Point pName = findPoint(n->id);
-                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
+                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
             }
             n = n->next;
         }
     }
+}
+
+//best
+void bestRoute(headN *allWay[10],int start,int end){
+    int count = allRoute(allWay,start,end);
+    float time[count],price[count],distance[count];
+    int change[count];
+    int time_index[count],price_index[count],distance_index[count],change_index[count];
+    for (int i = 0; i < count; i++) {
+        time[i] = allWay[i]->time;
+        price[i] = allWay[i]->price;
+        distance[i] = allWay[i]->distance;
+        change[i] = allWay[i]->change;
+        time_index[i] = i;
+        price_index[i] = i;
+        distance_index[i] = i;
+        change_index[i] = i;
+    }
+    selectionSort(time,count,time_index);
+    selectionSort(price,count,price_index);
+    selectionSort(distance,count,distance_index);
+    selectionSort(change,count,change_index);
+    printf("最少时间\n");
+    printWay(allWay[time_index[0]]);
+    printf("最少价钱\n");
+    printWay(allWay[price_index[0]]);
+    printf("最短距离\n");
+    printWay(allWay[distance_index[0]]);
+    printf("最少乘车\n");
+    printWay(allWay[change_index[0]]);
 }
 //最少时间
-void leastTime(Point start, wayNode *allWay[point_Num]) {
-    int i;
-    Neighbour *n;
-    n = start.first;
-    int FindPoint[point_Num];
-    float time[point_Num];
-    for (i = 0; i < point_Num; i++) {
-
-        allWay[i] = (wayNode*)malloc(sizeof(wayNode));
-        FindPoint[i] = 0;
-        time[i] = MAX;
-        allWay[i]->id = start.id;
-        strcpy(allWay[i]->name, start.name);
-        allWay[i]->next = NULL;
-    }
-    while (n != NULL) {
-
-        time[locate_int(n->id, allPointId, point_Num)] = method_f(n);
-        Point pName = findPoint(n->id);
-        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
-        n = n->next;
-    }
-    FindPoint[locate_int(start.id, allPointId, point_Num)] = 1;
-    int v = locate_int(start.id, allPointId, point_Num);
-    for (i = 0; i < point_Num - 1; i++) {
-        int min = MAX;
-        int u = v;
-        for (int j = 0; j < point_Num; j++) {
-
-            if (!FindPoint[j] && time[j] < min) {
-                u = j;
-                min = time[j];
-            }
-        }
-        FindPoint[u] = 1;
-        Point p = findPoint(allPointId[u]);
-        n = p.first;
-        while (n != NULL) {
-            float x = method_f(n);
-
-            if (x + time[u] < time[locate_int(n->id, allPointId, point_Num)] && !FindPoint[locate_int(n->id, allPointId, point_Num)]) {
-
-                time[locate_int(n->id, allPointId, point_Num)] = x + time[u];
-                copy_way(allWay[u], allWay[locate_int(n->id, allPointId, point_Num)]);
-                Point pName = findPoint(n->id);
-                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
-            }
-            n = n->next;
-        }
-    }
-}
+//void leastTime(Point start, wayNode *allWay[point_Num]) {
+//    int i;
+//    Neighbour *n;
+//    n = start.first;
+//    int FindPoint[point_Num];
+//    float time[point_Num];
+//    for (i = 0; i < point_Num; i++) {
+//
+//        allWay[i] = (wayNode*)malloc(sizeof(wayNode));
+//        FindPoint[i] = 0;
+//        time[i] = MAX;
+//        allWay[i]->id = start.id;
+//        strcpy(allWay[i]->name, start.name);
+//        allWay[i]->next = NULL;
+//    }
+//    while (n != NULL) {
+//
+//        time[locate_int(n->id, allPointId, point_Num)] = time_f(n->route,n->distance);
+//        Point pName = findPoint(n->id);
+//        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
+//        n = n->next;
+//    }
+//    FindPoint[locate_int(start.id, allPointId, point_Num)] = 1;
+//    int v = locate_int(start.id, allPointId, point_Num);
+//    for (i = 0; i < point_Num - 1; i++) {
+//        int min = MAX;
+//        int u = v;
+//        for (int j = 0; j < point_Num; j++) {
+//
+//            if (!FindPoint[j] && time[j] < min) {
+//                u = j;
+//                min = time[j];
+//            }
+//        }
+//        FindPoint[u] = 1;
+//        Point p = findPoint(allPointId[u]);
+//        n = p.first;
+//        while (n != NULL) {
+//            float x = time_f(n->route,n->distance);
+//
+//            if (x + time[u] < time[locate_int(n->id, allPointId, point_Num)] && !FindPoint[locate_int(n->id, allPointId, point_Num)]) {
+//
+//                time[locate_int(n->id, allPointId, point_Num)] = x + time[u];
+//                copy_way(allWay[u], allWay[locate_int(n->id, allPointId, point_Num)]);
+//                Point pName = findPoint(n->id);
+//                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
+//            }
+//            n = n->next;
+//        }
+//    }
+//}
 //最少换乘
-void least_Change(int start,int end) {
-    wayNode *w = createWay();
-    wayNode *leastChangeWay = createWay();
-    int leastChaneCnt = MAX;
-    char routeT1[20];
-    char routeT2[20];
-    wayNode *change[10];
-    int count = allRoute(change,start,end);
-    int changeCount[count];
-    for (int i = 0; i < count; i++) {
-        //TODO
-        int cnt = 0;
-        w = change[i]->next;
-        while (w->next != NULL) {
-            //TODO
-            char **ss1;
-            char **ss2;
-            ss1 = (char**)malloc(sizeof(char*));
-            ss2 = (char**)malloc(sizeof(char*));
-            strcpy(routeT2, w->next->route);
-            strcpy(routeT1, w->route);
-            int cnt1 = splitComma(routeT1, ss1);
-            int cnt2 = splitComma(routeT2, ss2);
-            int flag = 0;
-            for (int j = 0; j < cnt1; j++) {
-                //TODO
-                for (int k = 0; k < cnt2; k++) {
-                    if (equal_f(ss1[j], ss2[k])) {
-                        //TODO
-                        flag = 1;
-                        break;
-                    }
-                }
-                if (flag)
-                    //TODO
-                    break;
-            }
-            if (!flag)
-                cnt++;
-            w = w->next;
-        }
-        changeCount[i] = cnt;
-        if (changeCount[i] < leastChaneCnt) {
-            //TODO
-            copy_way(change[i], leastChangeWay);
-        }
-    }
-    printWay(leastChangeWay);
-}
+//void least_Change(int start,int end) {
+//
+//    int leastChaneCnt = MAX;
+//    char routeT1[20];
+//    char routeT2[20];
+//    wayNode *change[10];
+//    int count = allRoute(change,start,end);
+//    int changeCount[count];
+//
+//    headN *w = createWay(start);
+//    headN *leastChangeWay = createWay(start);
+//
+//    for (int i = 0; i < count; i++) {
+//        //TODO
+//        int cnt = 0;
+//        w = change[i]->next;
+//        while (w->next != NULL) {
+//            //TODO
+//            char **ss1;
+//            char **ss2;
+//            ss1 = (char**)malloc(sizeof(char*));
+//            ss2 = (char**)malloc(sizeof(char*));
+//            strcpy(routeT2, w->next->route);
+//            strcpy(routeT1, w->route);
+//            int cnt1 = splitComma(routeT1, ss1);
+//            int cnt2 = splitComma(routeT2, ss2);
+//            int flag = 0;
+//            for (int j = 0; j < cnt1; j++) {
+//                //TODO
+//                for (int k = 0; k < cnt2; k++) {
+//                    if (equal_f(ss1[j], ss2[k])) {
+//                        //TODO
+//                        flag = 1;
+//                        break;
+//                    }
+//                }
+//                if (flag)
+//                    //TODO
+//                    break;
+//            }
+//            if (!flag)
+//                cnt++;
+//            w = w->next;
+//        }
+//        changeCount[i] = cnt;
+//        if (changeCount[i] < leastChaneCnt) {
+//            //TODO
+//            copy_way(change[i], leastChangeWay);
+//        }
+//    }
+//    printWay(leastChangeWay);
+//}
 
 void Dijkstra(Point start, wayNode *allWay[point_Num]) {
     int i;
@@ -430,7 +602,7 @@ void Dijkstra(Point start, wayNode *allWay[point_Num]) {
     while (n != NULL) {
         dist[locate_int(n->id, allPointId, point_Num)] = n->distance;
         Point pName = findPoint(n->id);
-        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
+        insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
         n = n->next;
     }
     // the start has been found
@@ -462,7 +634,7 @@ void Dijkstra(Point start, wayNode *allWay[point_Num]) {
                 dist[locate_int(n->id, allPointId, point_Num)] = n->distance + dist[u];
                 copy_way(allWay[u], allWay[locate_int(n->id, allPointId, point_Num)]);
                 Point pName = findPoint(n->id);
-                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route);
+                insert_wayNode(allWay[locate_int(n->id, allPointId, point_Num)], n->id, pName.name, n->route,n->distance);
             }
             n = n->next;
         }
