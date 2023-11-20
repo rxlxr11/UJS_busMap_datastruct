@@ -7,5 +7,5 @@ void loginInter(void);
 void adminMenu(void);
 void stuMenu(void);
 void printBus(LinkList*);
-void printWay(wayNode*);
+
 #endif
